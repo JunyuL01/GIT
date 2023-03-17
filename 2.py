@@ -1,0 +1,72 @@
+"""
+(1/3)
+Supporting script for the medium post titled:
+'Is CNN equally shiny on mid-resolution satellite data?'
+available at https://medium.com/p/9e24e68f0c08
+
+Author: Pratyush Tripathy
+Date: 21 April, 2020
+
+Following package versions were used:
+numpy - 1.17.2
+sklearn - 0.22.1
+pyrsgis - 0.3.1
+tensorflow - 2.0.0
+"""
+
+import os, math, random, glob, time
+random.seed(2)
+import numpy as np
+from pyrsgis import raster
+
+#####################################################################
+##### PART - A: READING AND STORING IMAGE CHIPS AS NUMPY ARRAYS #####
+#####################################################################
+
+# Change the working directory
+imageDirectory = r"D:\Users\wuxuming\PycharmProjects\untitled2\yaogan\shujuji\images"   #就是我给你的数据集路径
+
+os.chdir(imageDirectory)
+
+# Get the number of files in the directory
+nSamples = len(glob.glob('*.tif'))
+print(nSamples)
+# Get basic information about the image chips
+ds, tempArr = raster.read(os.listdir(imageDirectory)[1])
+nBands, rows, cols = ds.RasterCount, ds.RasterXSize, ds.RasterYSize
+print(tempArr)
+# Create empty arrays to store data later
+features = np.empty((nSamples, nBands, rows, cols))
+labels = np.empty((nSamples, ))
+
+# Loop through the files, read and stack
+for n, file in enumerate(glob.glob('*.tif')):
+    if n==nSamples:
+        break
+    if n % 5000 == 0:
+        print('Sample read: %d of %d' % (n, nSamples))
+    ds, tempArr = raster.read(file)
+
+    # Get filename without extension, split by underscore and get the label
+    tempLabel = os.path.splitext(file)[0].split('_')[-1]
+
+    features[n, :, :, :] = tempArr
+    labels[n] = tempLabel
+
+# check for irrelevant values (we are interested in 1s and non-1s)
+labels = (labels == 1).astype(int) # added on 29 Aug 2021
+
+print('Input features shape:', features.shape)
+print('Input labels shape:', labels.shape)
+print('Values in input features, min: %d & max: %d' % (features.min(), features.max()))
+imageDirectory1 = r"D:\Users\wuxuming\PycharmProjects\untitled2\yaogan\shujuji"    #就是我给你的数据集路径
+os.chdir(imageDirectory1)
+
+
+# Save the arrays as .npy files
+np.save('CNN_111by111_features.npy', features)
+np.save('CNN_111by111_labels.npy', labels)
+print('Arrays saved at location %s' % (os.getcwd()))
+
+
+
